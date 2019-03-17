@@ -78,7 +78,7 @@ cdef class UDPTransport(UVBaseTransport):
 
     cdef _connect(self, system.sockaddr* addr, size_t addr_len):
         cdef int err
-        uv.uv_udp_connect(<uv.uv_udp_t*>self._handle, addr)
+        err = uv.uv_udp_connect(<uv.uv_udp_t*>self._handle, addr)
         if err < 0:
             exc = convert_error(err)
             raise exc

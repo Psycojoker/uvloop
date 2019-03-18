@@ -2962,7 +2962,6 @@ cdef class Loop:
 
                 if rads is not None:
                     rai = (<AddrInfo>rads).data
-                    sock = udp._get_socket()
                     while rai is not NULL:
                         if rai.ai_family != lai.ai_family:
                             rai = rai.ai_next
@@ -3088,6 +3087,7 @@ class _SyncSocketWriterFuture(aio_Future):
 
 include "cbhandles.pyx"
 include "pseudosock.pyx"
+include "lru.pyx"
 
 include "handles/handle.pyx"
 include "handles/async_.pyx"

@@ -90,7 +90,7 @@ cdef __convert_pyaddr_to_sockaddr(int family, object addr,
         memcpy(res, &ret.addr, ret.addr_size)
         return
 
-    ret = SockAddrHolder()
+    ret = SockAddrHolder.__new__(SockAddrHolder)
     if family == uv.AF_INET:
         if not isinstance(addr, tuple):
             raise TypeError('AF_INET address must be tuple')
@@ -167,7 +167,7 @@ cdef __convert_pyaddr_to_sockaddr(int family, object addr,
 
     else:
         raise ValueError(
-            f'epected AF_INET, AF_INET6, or AF_UNIX family, got {family}')
+            f'expected AF_INET, AF_INET6, or AF_UNIX family, got {family}')
 
     ret.family = family
     sockaddrs[addr] = ret

@@ -42,7 +42,7 @@ cdef __convert_sockaddr_to_pyaddr(const system.sockaddr* addr):
             raise convert_error(err)
 
         return (
-            (<bytes>buf).decode(),
+            PyUnicode_FromString(buf),
             system.ntohs(addr4.sin_port)
         )
 
@@ -54,7 +54,7 @@ cdef __convert_sockaddr_to_pyaddr(const system.sockaddr* addr):
             raise convert_error(err)
 
         return (
-            (<bytes>buf).decode(),
+            PyUnicode_FromString(buf),
             system.ntohs(addr6.sin6_port),
             system.ntohl(addr6.sin6_flowinfo),
             addr6.sin6_scope_id

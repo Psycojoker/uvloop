@@ -19,7 +19,8 @@ from .includes.python cimport (
     PyMemoryView_FromMemory, PyBUF_WRITE,
     PyMemoryView_FromObject, PyMemoryView_Check,
     PyOS_AfterFork_Parent, PyOS_AfterFork_Child,
-    PyOS_BeforeFork
+    PyOS_BeforeFork,
+    PyUnicode_FromString
 )
 from .includes.flowcontrol cimport add_flowcontrol_defaults
 

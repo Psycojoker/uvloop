@@ -198,6 +198,8 @@ cdef class UDPTransport(UVBaseTransport):
             Py_buffer       try_pybuf
             uv.uv_buf_t     try_uvbuf
 
+        self._ensure_alive()
+
         if self._family not in (uv.AF_INET, uv.AF_INET6, uv.AF_UNIX):
             raise RuntimeError('UDPTransport.family is undefined; cannot send')
 
@@ -215,7 +217,7 @@ cdef class UDPTransport(UVBaseTransport):
                     f'a DNS lookup is required')
             saddr = <system.sockaddr*>(&saddr_st)
 
-        if (<uv.uv_udp_t*>self._handle).send_queue_size == 0:
+        if self._get_write_buffer_size() == 0:
             PyObject_GetBuffer(data, &try_pybuf, PyBUF_SIMPLE)
             try_uvbuf.base = <char*>try_pybuf.buf
             try_uvbuf.len = try_pybuf.len
@@ -241,6 +243,8 @@ cdef class UDPTransport(UVBaseTransport):
 
                 exc = convert_error(err)
                 self._fatal_error(exc, True)
+            else:
+                self._maybe_pause_protocol()
 
         else:
             if err < 0:
@@ -272,15 +276,17 @@ cdef class UDPTransport(UVBaseTransport):
 
     def sendto(self, data, addr=None):
         if not data:
+            # Replicating asyncio logic here.
             return
 
         if self._conn_lost:
-            # TODO add warning
+            # Replicating asyncio logic here.
+            if self._conn_lost >= LOG_THRESHOLD_FOR_CONNLOST_WRITES:
+                aio_logger.warning('socket.send() raised exception.')
             self._conn_lost += 1
             return
 
         self._send(data, addr)
-        # self._maybe_pause_protocol()
 
 
 cdef void __uv_udp_on_receive(uv.uv_udp_t* handle,

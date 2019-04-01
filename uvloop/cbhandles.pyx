@@ -254,11 +254,15 @@ cdef class TimerHandle:
 
         if self.loop._debug:
             started = time_monotonic()
+
+        import os
+
         try:
             if PY37:
                 assert self.context is not None
                 Context_Enter(self.context)
 
+            mem_before = psutil.Process(os.getpid()).memory_info()[0]
             if args is not None:
                 callback(*args)
             else:
@@ -275,6 +279,16 @@ cdef class TimerHandle:
 
             self.loop.call_exception_handler(context)
         else:
+            mem_after = psutil.Process(os.getpid()).memory_info()[0]
+            mem_diff = mem_after - mem_before
+
+            if mem_diff > 0:
+                aio_logger.warning('\033[0;31mMemory diff: %s [%s] for %s [2]\033[0m' % (mem_diff, mem_after, self))
+            elif mem_diff < 0:
+                aio_logger.warning('\033[0;32mMemory diff: %s [%s] for %s [2]\033[0m' % (mem_diff, mem_after, self))
+            else:
+                aio_logger.warning('Memory diff: %s [%s] for %s [2]' % (mem_diff, mem_after, self))
+
             if self.loop._debug:
                 delta = time_monotonic() - started
                 if delta > self.loop.slow_callback_duration:

@@ -1,6 +1,7 @@
 # cython: language_level=3, embedsignature=True
 
 import asyncio
+import psutil
 cimport cython
 
 from .includes.debug cimport UVLOOP_DEBUG
@@ -386,14 +387,27 @@ cdef class Loop:
             for i from 0 <= i < ntodo:
                 handler = <Handle> popleft()
                 if handler._cancelled == 0:
+                    import os
+
                     try:
                         started = time_monotonic()
+                        mem_before = psutil.Process(os.getpid()).memory_info()[0]
                         handler._run()
                     except BaseException as ex:
                         self._stop(ex)
                         return
                     else:
                         delta = time_monotonic() - started
+                        mem_after = psutil.Process(os.getpid()).memory_info()[0]
+                        mem_diff = mem_after - mem_before
+
+                        if mem_diff > 0:
+                            aio_logger.warning('\033[0;31mMemory diff: %s [%s] for %s\033[0m' % (mem_diff, mem_after, handler._format_handle()))
+                        elif mem_diff < 0:
+                            aio_logger.warning('\033[0;32mMemory diff: %s [%s] for %s\033[0m' % (mem_diff, mem_after, handler._format_handle()))
+                        else:
+                            aio_logger.warning('Memory diff: %s [%s] for %s' % (mem_diff, mem_after, handler._format_handle()))
+
                         if delta > self.slow_callback_duration:
                             aio_logger.warning(
                                 'Executing %s took %.3f seconds',
